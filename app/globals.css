@@ -52,12 +52,22 @@ body {
 
 .header {
   margin-bottom: 24px;
+  border-top: 3px solid var(--gold);
+  padding-top: 14px;
+}
+
+.kicker {
+  margin: 0 0 2px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--gold);
 }
 
 .header h1 {
   margin: 0 0 4px;
-  font-size: clamp(1.75rem, 5vw, 2.25rem);
-  letter-spacing: -0.03em;
+  font-size: clamp(2rem, 7vw, 2.9rem);
+  line-height: 1.02;
+  letter-spacing: -0.04em;
   text-wrap: balance;
 }
 
@@ -165,22 +175,58 @@ body {
 
 .gw-title {
   margin: 0;
-  font-size: 1.15rem;
+  font-size: 1.35rem;
+  letter-spacing: -0.02em;
 }
 
 .verdict {
-  padding: 12px 14px;
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--gold);
-  border-radius: var(--radius);
-  background: var(--surface);
+  padding: 14px 16px;
+  border: 1px solid var(--gold-dim);
+  border-left: 4px solid var(--gold);
+  border-radius: 14px;
+  background: linear-gradient(to bottom, rgba(232, 185, 35, 0.1), rgba(232, 185, 35, 0.02)), var(--surface);
 }
 
 .verdict h3 {
   margin: 0 0 4px;
   font-size: 0.85rem;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--gold);
+}
+
+.scoreboard {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 14px 16px;
+  border: 1px solid var(--gold-dim);
+  border-radius: 14px;
+  background: var(--surface-2);
+}
+
+.scoreboard-total {
+  font-size: clamp(2.2rem, 9vw, 3rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.scoreboard-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.scoreboard-meta {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .verdict p {
@@ -791,15 +837,16 @@ select,
   max-width: 560px;
   margin: 0 auto;
   border: 2px solid var(--pitch-line);
-  border-radius: 12px;
+  border-radius: 16px;
   background:
     repeating-linear-gradient(
       to bottom,
-      rgba(255, 255, 255, 0.035) 0 40px,
-      rgba(255, 255, 255, 0) 40px 80px
+      rgba(255, 255, 255, 0.09) 0 56px,
+      rgba(0, 0, 0, 0.08) 56px 112px
     ),
     var(--pitch);
   overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
 }
 
 .pitch-halfway {
@@ -916,15 +963,17 @@ select,
   margin: 0 auto;
   padding: 6px 8px 5px;
   border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
+  border-radius: 10px;
+  background: rgba(10, 26, 18, 0.92);
   color: var(--text);
   font: inherit;
   cursor: default;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 .pitch-marker--captain {
   border-color: var(--gold);
+  box-shadow: 0 0 0 2px var(--gold-dim), 0 2px 12px rgba(0, 0, 0, 0.5);
 }
 
 .pitch-marker--vice {

@@ -503,6 +503,7 @@ export default function Home() {
   return (
     <main className="main">
       <header className="header">
+        <p className="kicker">Matchday team-sheet · Free tools only</p>
         <h1>FPL Team Analysis</h1>
         <p>Free FPL API + Understat only. Next 5 gameweeks. Blended xP, not bookmaker odds.</p>
         <DeadlineCountdown />
@@ -574,6 +575,22 @@ export default function Home() {
           aria-label={`Gameweek ${result.gw} best XI`}
         >
           <h2 className="gw-title">Gameweek {result.gw} — Best XI</h2>
+          {(() => {
+            const total = result.xi.reduce((s, p) => s + p.score, 0);
+            const cap = result.xi.find((p) => p.id === result.captain);
+            return (
+              <div className="scoreboard" aria-label="Projected score">
+                <div>
+                  <div className="scoreboard-total">{total.toFixed(1)}</div>
+                  <div className="scoreboard-label">Projected pts · {result.usedXpts ? "xP blend" : "heuristic"}</div>
+                </div>
+                <div className="scoreboard-meta">
+                  <span>C: {cap?.name ?? "—"}</span>
+                  <span>Rating {result.rating.grade} ({result.rating.rate})</span>
+                </div>
+              </div>
+            );
+          })()}
           <nav className="tabs" role="tablist" aria-label="Analysis sections">
             {TABS.map((t) => (
               <button
