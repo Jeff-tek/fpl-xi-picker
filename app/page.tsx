@@ -590,6 +590,11 @@ export default function Home() {
           </nav>
           {tab === "xi" && (
             <>
+          <PitchView
+            xi={result.xi}
+            captain={result.captain}
+            vice={result.vice}
+          />
           <section className="verdict" aria-label="Standout pick">
             <h3>Standout pick</h3>
             <p>{result.verdict.join(" ")}</p>
@@ -677,11 +682,6 @@ export default function Home() {
           )}
           {tab === "xi" && (
             <>
-          <PitchView
-            xi={result.xi}
-            captain={result.captain}
-            vice={result.vice}
-          />
           {[1, 2, 3, 4].map((t) => {
             const players = result.xi.filter((p) => p.type === t);
             if (players.length === 0) return null;
