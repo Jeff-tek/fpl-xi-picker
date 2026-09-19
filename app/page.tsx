@@ -34,6 +34,22 @@ const LINES: Record<number, string> = {
   4: "Forwards",
 };
 
+const TABS = [
+  { id: "xi", label: "Best XI" },
+  { id: "captain", label: "Captain" },
+  { id: "fixtures", label: "Fixtures" },
+  { id: "prices", label: "Prices" },
+  { id: "planner", label: "Planner" },
+] as const;
+
+type TabId = (typeof TABS)[number]["id"];
+
+interface EntryTransfer {
+  element_in: number;
+  element_out: number;
+  event: number;
+}
+
 const scoreLabel = (s: number): string =>
   Number.isFinite(s) ? s.toFixed(1) : "—";
 
@@ -288,6 +304,7 @@ export default function Home() {
   const [entryId, setEntryId] = useState("");
   const [teamQuery, setTeamQuery] = useState("");
   const [diffOnly, setDiffOnly] = useState(false);
+  const [tab, setTab] = useState<TabId>("xi");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{
@@ -305,6 +322,7 @@ export default function Home() {
     teamsById: Map<number, string>;
     boot: Bootstrap;
     history: EntryHistory | null;
+    transfers: EntryTransfer[] | null;
     usedXpts: boolean;
   } | null>(null);
 
@@ -355,7 +373,7 @@ export default function Home() {
       const teamsById = new Map(boot.teams.map((t) => [t.id, t.short_name]));
       const codesById = new Map(boot.teams.map((t) => [t.id, t.code]));
       const gwIds = [next.id, next.id + 1, next.id + 2, next.id + 3, next.id + 4];
-      const [gwFixtures, history, understat] = await Promise.all([
+      const [gwFixtures, history, understat, transfers] = await Promise.all([
         Promise.all(gwIds.map((g) => get<FplFixture[]>(`fixtures/?event=${g}`).catch(() => [] as FplFixture[]))),
         (async (): Promise<EntryHistory | null> => {
           try {
@@ -373,6 +391,15 @@ export default function Home() {
             const j = (await r.json()) as Record<string, UnderstatPlayer[]>;
             const first = Object.values(j)[0];
             return Array.isArray(first) ? (Object.values(j).flat() as UnderstatPlayer[]) : null;
+          } catch {
+            return null;
+          }
+        })(),
+        (async (): Promise<EntryTransfer[] | null> => {
+          try {
+            const r = await fetch(`/api/fpl/entry/${resolvedId}/transfers/`);
+            if (!r.ok) return null;
+            return (await r.json()) as EntryTransfer[];
           } catch {
             return null;
           }
@@ -415,8 +442,10 @@ export default function Home() {
         teamsById,
         boot,
         history,
+        transfers,
         usedXpts,
       });
+      setTab("xi");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Analysis failed.");
     } finally {
@@ -491,6 +520,22 @@ export default function Home() {
           aria-label={`Gameweek ${result.gw} best XI`}
         >
           <h2 className="gw-title">Gameweek {result.gw} — Best XI</h2>
+          <nav className="tabs" role="tablist" aria-label="Analysis sections">
+            {TABS.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                role="tab"
+                aria-selected={tab === t.id}
+                className={`tab${tab === t.id ? " tab--active" : ""}`}
+                onClick={() => setTab(t.id)}
+              >
+                {t.label}
+              </button>
+            ))}
+          </nav>
+          {tab === "xi" && (
+            <>
           <section className="verdict" aria-label="Standout pick">
             <h3>Standout pick</h3>
             <p>{result.verdict.join(" ")}</p>
@@ -504,6 +549,7 @@ export default function Home() {
               <div className="ratebar-fill" style={{ width: `${result.rating.rate}%` }} />
             </div>
           </section>
+          {tab === "captain" && (
           <section className="line" aria-label="Captain ranking">
             <h3>Armband ranking · top 3</h3>
             <ol className="grid">
@@ -529,6 +575,10 @@ export default function Home() {
               })}
             </ol>
           </section>
+          )}
+          {tab === "fixtures" && (
+          <section className="line" aria-label="Fixture ticker">
+            <h3>Next 5 fixtures</h3>
           <section className="line" aria-label="Fixture ticker">
             <h3>Next 5 fixtures</h3>
             <div className="ticker-wrap">
@@ -570,6 +620,9 @@ export default function Home() {
               </table>
             </div>
           </section>
+          )}
+          {tab === "xi" && (
+            <>
           <PitchView
             xi={result.xi}
             captain={result.captain}
@@ -622,6 +675,10 @@ export default function Home() {
               </ol>
             </div>
           )}
+            </>
+          )}
+          {tab === "prices" && (
+            <>
           {(() => {
             const { risers, fallers } = priceWatch(result.boot, result.teamsById);
             const cur = result.history?.current?.[result.history.current.length - 1];
@@ -673,6 +730,9 @@ export default function Home() {
               </>
             );
           })()}
+            </>
+          )}
+          {tab === "planner" && (
           <TransferPlanner
             boot={result.boot}
             initialSquadIds={result.squad.map((s) => s.id)}
@@ -680,9 +740,11 @@ export default function Home() {
               const cur = result.history?.current?.[result.history.current.length - 1];
               return typeof cur?.bank === "number" ? cur.bank / 10 : null;
             })()}
+            transfers={result.transfers}
             gwIds={result.gwIds.slice(0, 3)}
             gwFixtures={result.gwFixtures.slice(0, 3)}
           />
+          )}
         </section>
       )}
     </main>

@@ -448,6 +448,31 @@ body {
   text-decoration: underline;
 }
 
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 12px 0 4px;
+}
+
+.tab {
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tab--active {
+  border-color: var(--gold);
+  background: var(--gold);
+  color: var(--gold-text);
+}
+
 .chips {
   display: flex;
   flex-wrap: wrap;

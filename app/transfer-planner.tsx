@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Bootstrap, FplFixture } from "../lib/fpl";
 import { price as fplPrice } from "../lib/fpl";
 import type { Scored } from "../lib/select";
@@ -8,10 +8,17 @@ import { pickCaptaincy, pickXi, scorePlayer } from "../lib/select";
 
 const CHIPS = ["—", "WC", "FH", "BB", "TC"] as const;
 
+interface EntryTransfer {
+  element_in: number;
+  element_out: number;
+  event: number;
+}
+
 interface Props {
   boot: Bootstrap;
   initialSquadIds: number[];
   bank: number | null;
+  transfers: EntryTransfer[] | null;
   gwIds: number[];
   gwFixtures: FplFixture[][];
 }
@@ -30,7 +37,7 @@ const priceM = (id: number, byId: Map<number, Bootstrap["elements"][number]>): n
 const webName = (id: number, byId: Map<number, Bootstrap["elements"][number]>): string =>
   byId.get(id)?.web_name ?? `#${id}`;
 
-export default function TransferPlanner({ boot, initialSquadIds, bank, gwIds, gwFixtures }: Props) {
+export default function TransferPlanner({ boot, initialSquadIds, bank, transfers, gwIds, gwFixtures }: Props) {
   const byId = useMemo(() => new Map(boot.elements.map((e) => [e.id, e])), [boot]);
   const teamsById = useMemo(() => new Map(boot.teams.map((t) => [t.id, t.short_name])), [boot]);
   const codesById = useMemo(() => new Map(boot.teams.map((t) => [t.id, t.code])), [boot]);
@@ -44,6 +51,7 @@ export default function TransferPlanner({ boot, initialSquadIds, bank, gwIds, gw
   const [outSel, setOutSel] = useState("");
   const [inSel, setInSel] = useState("");
   const [chips, setChips] = useState<Record<number, string>>({});
+  const [sellPrice, setSellPrice] = useState<number | null>(null);
 
   const horizon = [0, 1, 2].filter((i) => gwIds[i] !== undefined);
 
@@ -67,7 +75,35 @@ export default function TransferPlanner({ boot, initialSquadIds, bank, gwIds, gw
 
   const outId = outSel ? Number(outSel) : NaN;
   const outEl = byId.get(outId);
-  const budget = outEl ? fplPrice(outEl) + funds : funds;
+
+  useEffect(() => {
+    setSellPrice(null);
+    if (!outEl) return;
+    let live = true;
+    const boughtEvent = (() => {
+      const buys = (transfers ?? []).filter((t) => t.element_in === outEl.id);
+      return buys.length > 0 ? Math.max(...buys.map((t) => t.event)) : 1;
+    })();
+    const current = outEl.now_cost;
+    fetch(`/api/fpl/element-summary/${outEl.id}/`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (!live || !j) return;
+        const hist = (j.history ?? []) as Array<{ event: number; value: number }>;
+        const bought = hist.find((h) => h.event === boughtEvent)?.value ?? current;
+        const sell = current <= bought ? current : bought + Math.floor((current - bought) / 2);
+        setSellPrice(sell / 10);
+      })
+      .catch(() => {
+        if (live) setSellPrice(null);
+      });
+    return () => {
+      live = false;
+    };
+  }, [outEl, transfers]);
+
+  const proceeds = sellPrice ?? (outEl ? fplPrice(outEl) : 0);
+  const budget = outEl ? proceeds + funds : funds;
 
   const candidates: Scored[] = useMemo(() => {
     if (!outEl || !gwFixtures[activeGw]) return [];
@@ -82,7 +118,7 @@ export default function TransferPlanner({ boot, initialSquadIds, bank, gwIds, gw
   const applyTransfer = (): void => {
     const inn = inSel ? Number(inSel) : NaN;
     if (!outEl || !byId.get(inn)) return;
-    const cost = priceM(inn, byId) - priceM(outId, byId);
+    const cost = priceM(inn, byId) - proceeds;
     if (cost > funds + 1e-9) return;
     setSquadIds((ids) => ids.map((id) => (id === outId ? inn : id)));
     setFunds((f) => Math.round((f - cost) * 10) / 10);
@@ -91,6 +127,7 @@ export default function TransferPlanner({ boot, initialSquadIds, bank, gwIds, gw
     setLog((l) => [...l, { gw: gwIds[activeGw], out: outId, inn }]);
     setOutSel("");
     setInSel("");
+    setSellPrice(null);
   };
 
   const reset = (): void => {
@@ -102,6 +139,7 @@ export default function TransferPlanner({ boot, initialSquadIds, bank, gwIds, gw
     setChips({});
     setOutSel("");
     setInSel("");
+    setSellPrice(null);
   };
 
   return (
@@ -168,12 +206,15 @@ export default function TransferPlanner({ boot, initialSquadIds, bank, gwIds, gw
       <div className="planform">
         <div className="field">
           <label className="field-label" htmlFor="plan-out">Sell (GW{gwIds[activeGw]})</label>
-          <select id="plan-out" value={outSel} onChange={(e) => { setOutSel(e.target.value); setInSel(""); }}>
+          <select id="plan-out" value={outSel} onChange={(e) => { setOutSel(e.target.value); setInSel(""); setSellPrice(null); }}>
             <option value="">— pick —</option>
             {squadIds.map((id) => (
               <option key={id} value={id}>{webName(id, byId)} · £{priceM(id, byId).toFixed(1)}m</option>
             ))}
           </select>
+          {outEl && (
+            <span className="chip">Sell £{proceeds.toFixed(1)}m{sellPrice === null ? " (current — resolving…)" : " (true selling)"}</span>
+          )}
         </div>
         <div className="field">
           <label className="field-label" htmlFor="plan-in">Buy · budget £{budget.toFixed(1)}m</label>
@@ -195,7 +236,7 @@ export default function TransferPlanner({ boot, initialSquadIds, bank, gwIds, gw
           ))}
         </ol>
       )}
-      <p className="bankline">Prices are current (selling-price walk not yet tracked — bank math assumes buy ≈ sell). FH squads reset the next GW — plan accordingly.</p>
+      <p className="bankline">Selling prices resolved per player (bought + half profit). Buys pay current price. FH squads reset the next GW — plan accordingly.</p>
     </section>
   );
 }
