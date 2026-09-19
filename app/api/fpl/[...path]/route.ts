@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const UPSTREAM =
-  process.env.FPL_API ?? "https://fantasy.premierleague.com/api";
+const UPSTREAM = (
+  process.env.FPL_API?.trim() || "https://fantasy.premierleague.com/api"
+).replace(/\/+$/, "");
 
 // Vercel Hobby kills functions at ~10s, so abort just under that to
 // return a JSON diagnosis instead of a bare gateway error.
