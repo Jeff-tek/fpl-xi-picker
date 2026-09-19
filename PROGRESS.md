@@ -10,6 +10,7 @@ Scope: Next.js Vercel app. Input = FPL Entry ID. Output = best XI (legal formati
 - [x] app/page.tsx UI (Entry-ID input + XI + C/VC + reasons)
 - [x] CI workflow (typecheck, no local build) — fixed: npm install (no lockfile locally), hardened edge cases
 - [x] push to GitHub — DONE: https://github.com/Jeff-tek/fpl-xi-picker (main @ eb43e1b)
+- [x] 502 diagnosis round 2 (2026-09-19): upstream healthy from non-Vercel (200, 1.7MB) → Vercel-egress specific. Proxy now aborts at 9s (Hobby 10s kill), validates JSON, streams raw body, includes fetch cause + upstream preview. UI surfaces proxy `error` message instead of bare status.
 - [ ] Vercel deploy — import Jeff-tek/fpl-xi-picker, root dir fpl-team-analysis/
 
 ## Changed files

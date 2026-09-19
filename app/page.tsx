@@ -6,7 +6,12 @@ import { pickCaptaincy, pickXi, scorePlayer } from "../lib/select";
 
 const get = async <T,>(path: string): Promise<T> => {
   const r = await fetch(`/api/fpl/${path}`);
-  if (!r.ok) throw new Error(`Failed ${path}: ${r.status}`);
+  if (!r.ok) {
+    const body = (await r.json().catch(() => null)) as {
+      error?: string;
+    } | null;
+    throw new Error(body?.error ?? `Failed ${path}: ${r.status}`);
+  }
   return r.json() as Promise<T>;
 };
 
