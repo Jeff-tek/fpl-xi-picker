@@ -14,6 +14,7 @@ import {
   scorePlayer,
   summarizeXi,
 } from "../lib/select";
+import TransferPlanner from "./transfer-planner";
 
 const get = async <T,>(path: string): Promise<T> => {
   const r = await fetch(`/api/fpl/${path}`);
@@ -672,6 +673,16 @@ export default function Home() {
               </>
             );
           })()}
+          <TransferPlanner
+            boot={result.boot}
+            initialSquadIds={result.squad.map((s) => s.id)}
+            bank={(() => {
+              const cur = result.history?.current?.[result.history.current.length - 1];
+              return typeof cur?.bank === "number" ? cur.bank / 10 : null;
+            })()}
+            gwIds={result.gwIds.slice(0, 3)}
+            gwFixtures={result.gwFixtures.slice(0, 3)}
+          />
         </section>
       )}
     </main>
