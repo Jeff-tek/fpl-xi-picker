@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { Bootstrap, FplElement, FplFixture, FplPick, UnderstatPlayer } from "../lib/fpl";
-import { matchUnderstat, shirtUrl, xPtsFor } from "../lib/fpl";
+import type { Bootstrap, FplElement, FplFixture, FplPick, LiveElement, UnderstatPlayer } from "../lib/fpl";
+import { asLiveStats, computeLivePoints, matchUnderstat, shirtUrl, xPtsFor } from "../lib/fpl";
 import type { Scored } from "../lib/select";
 import {
   isDifferential,
@@ -269,17 +269,19 @@ function PitchMarker({
   p,
   isCaptain,
   isVice,
+  livePts,
 }: {
   p: Scored;
   isCaptain: boolean;
   isVice: boolean;
+  livePts: number | null;
 }) {
   return (
     <li className="pitch-slot">
       <button
         type="button"
         className={`pitch-marker${isCaptain ? " pitch-marker--captain" : isVice ? " pitch-marker--vice" : ""}`}
-        title={`${p.name} · ${p.teamName} · ${fixtureLabel(p)} · ${scoreLabel(p.score)} pts`}
+        title={`${p.name} · ${p.teamName} · ${fixtureLabel(p)}${livePts !== null ? ` · ${livePts} pts live` : ""}`}
       >
         <Shirt
           className="pitch-marker-shirt"
@@ -292,7 +294,7 @@ function PitchMarker({
           {isVice && <span className="badge badge-vc">VC</span>}
           <span className="pitch-marker-label">{p.name}</span>
         </span>
-        <span className="pitch-marker-score">{scoreLabel(p.score)}</span>
+        {livePts !== null && <span className="pitch-marker-live">{livePts} pts</span>}
       </button>
     </li>
   );
@@ -302,10 +304,12 @@ function PitchView({
   xi,
   captain,
   vice,
+  liveById,
 }: {
   xi: Scored[];
   captain: number;
   vice: number;
+  liveById: Map<number, number>;
 }) {
   return (
     <figure className="pitch-figure">
@@ -335,6 +339,7 @@ function PitchView({
                   p={p}
                   isCaptain={p.id === captain}
                   isVice={p.id === vice}
+                  livePts={liveById.get(p.id) ?? null}
                 />
               ))}
             </ol>
@@ -371,6 +376,32 @@ export default function Home() {
     usedXpts: boolean;
     entryId: string;
   } | null>(null);
+  const [liveById, setLiveById] = useState<Map<number, number>>(new Map());
+
+  // Best-effort live actuals for the pitch — silent fail leaves names only.
+  useEffect(() => {
+    if (!result) return;
+    let live = true;
+    fetch(`/api/fpl/event/${result.gw}/live/`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (!live || !j) return;
+        const m = new Map<number, number>();
+        const els = (j as { elements?: LiveElement[] }).elements ?? [];
+        for (const el of els) {
+          const st = asLiveStats(el.stats);
+          if (st.minutes <= 0) continue;
+          const pl = result.xi.find((p) => p.id === el.id);
+          if (!pl) continue;
+          m.set(el.id, computeLivePoints(st, pl.type as 1 | 2 | 3 | 4));
+        }
+        setLiveById(m);
+      })
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [result]);
 
   const resolveEntryId = async (id: string, q: string, boot: Bootstrap): Promise<string> => {
     if (id) return id;
@@ -397,6 +428,7 @@ export default function Home() {
     setLoading(true);
     setError(null);
     setResult(null);
+    setLiveById(new Map());
     try {
       const id = entryId.trim();
       const q = teamQuery.trim();
@@ -611,6 +643,7 @@ export default function Home() {
             xi={result.xi}
             captain={result.captain}
             vice={result.vice}
+            liveById={liveById}
           />
           <section className="verdict" aria-label="Standout pick">
             <h3>Standout pick</h3>
