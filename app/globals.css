@@ -473,6 +473,121 @@ body {
   color: var(--gold-text);
 }
 
+.tabs {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  padding: 8px 0;
+  background: var(--bg);
+}
+
+.line h4 {
+  margin: 14px 0 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.faint {
+  color: var(--faint);
+  font-weight: 400;
+}
+
+.flag-ok {
+  padding: 2px 9px;
+  border: 1px solid rgba(74, 222, 128, 0.4);
+  border-radius: 999px;
+  background: var(--green-tint);
+  color: var(--green);
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.deadline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.livedot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: pulse 2s ease-in-out infinite;
+  transform-origin: center;
+}
+
+html {
+  color-scheme: dark;
+  scroll-behavior: smooth;
+}
+
+button,
+select,
+.gwlink {
+  touch-action: manipulation;
+}
+
+.btn:hover,
+.toggle:hover,
+.mini:hover,
+.tab:hover,
+.gwlink:hover {
+  filter: brightness(1.12);
+}
+
+.skip {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  padding: 8px 14px;
+  background: var(--gold);
+  color: var(--gold-text);
+  font-weight: 700;
+  border-radius: 0 0 8px 0;
+}
+
+.skip:focus-visible {
+  left: 0;
+  z-index: 50;
+}
+
+.results {
+  scroll-margin-top: 64px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .livedot {
+    animation: none;
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
 .chips {
   display: flex;
   flex-wrap: wrap;

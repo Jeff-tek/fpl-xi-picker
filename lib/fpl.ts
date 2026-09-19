@@ -178,3 +178,74 @@ export const isHome = (
 // Official FPL shirt asset (66px PNG). GK kits use the `_1` variant.
 export const shirtUrl = (teamCode: number, isGk: boolean): string =>
   `https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_${teamCode}${isGk ? "_1" : ""}-66.png`;
+
+export interface LiveStats {
+  minutes: number;
+  goals_scored: number;
+  assists: number;
+  clean_sheets: number;
+  goals_conceded: number;
+  own_goals: number;
+  penalties_saved: number;
+  penalties_missed: number;
+  yellow_cards: number;
+  red_cards: number;
+  saves: number;
+  bonus: number;
+  bps: number;
+  clearances_blocks_interceptions: number;
+  recoveries: number;
+  tackles: number;
+}
+
+export interface LiveElement {
+  id: number;
+  stats: LiveStats;
+}
+
+export const asLiveStats = (s: Partial<LiveStats> | null | undefined): LiveStats => ({
+  minutes: s?.minutes ?? 0,
+  goals_scored: s?.goals_scored ?? 0,
+  assists: s?.assists ?? 0,
+  clean_sheets: s?.clean_sheets ?? 0,
+  goals_conceded: s?.goals_conceded ?? 0,
+  own_goals: s?.own_goals ?? 0,
+  penalties_saved: s?.penalties_saved ?? 0,
+  penalties_missed: s?.penalties_missed ?? 0,
+  yellow_cards: s?.yellow_cards ?? 0,
+  red_cards: s?.red_cards ?? 0,
+  saves: s?.saves ?? 0,
+  bonus: s?.bonus ?? 0,
+  bps: s?.bps ?? 0,
+  clearances_blocks_interceptions: s?.clearances_blocks_interceptions ?? 0,
+  recoveries: s?.recoveries ?? 0,
+  tackles: s?.tackles ?? 0,
+});
+
+export const DEFCON_THRESHOLD: Record<number, number> = { 1: 10, 2: 10, 3: 12, 4: 12 };
+
+export const defconProgress = (s: LiveStats, type: number): { actions: number; threshold: number; reached: boolean } => {
+  const actions =
+    s.clearances_blocks_interceptions + s.tackles + (type === 2 ? 0 : s.recoveries);
+  const threshold = DEFCON_THRESHOLD[type] ?? 12;
+  return { actions, threshold, reached: actions >= threshold };
+};
+
+// Estimate of official FPL points from live stats (bonus provisional until matches end).
+export const computeLivePoints = (s: LiveStats, type: ElementType): number => {
+  if (s.minutes <= 0) return 0;
+  let pts = 1 + (s.minutes >= 60 ? 1 : 0);
+  pts += s.goals_scored * (type === 3 ? 5 : type === 4 ? 4 : 6);
+  pts += s.assists * 3;
+  if (s.minutes >= 60 && s.goals_conceded === 0) pts += type === 1 || type === 2 ? 4 : type === 3 ? 1 : 0;
+  if (type === 1) pts += Math.floor(s.saves / 3);
+  if (type === 1 || type === 2) pts -= Math.floor(s.goals_conceded / 2);
+  pts += s.penalties_saved * 5;
+  pts -= s.penalties_missed * 2;
+  pts -= s.own_goals * 2;
+  pts -= s.yellow_cards;
+  pts -= s.red_cards * 3;
+  pts += s.bonus;
+  if (defconProgress(s, type).reached) pts += 2;
+  return pts;
+};

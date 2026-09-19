@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Bootstrap, FplElement, FplFixture, FplPick, UnderstatPlayer } from "../lib/fpl";
 import { matchUnderstat, shirtUrl, xPtsFor } from "../lib/fpl";
 import type { Scored } from "../lib/select";
@@ -15,6 +15,7 @@ import {
   summarizeXi,
 } from "../lib/select";
 import TransferPlanner from "./transfer-planner";
+import LiveMatchday from "./live-matchday";
 
 const get = async <T,>(path: string): Promise<T> => {
   const r = await fetch(`/api/fpl/${path}`);
@@ -40,6 +41,7 @@ const TABS = [
   { id: "fixtures", label: "Fixtures" },
   { id: "prices", label: "Prices" },
   { id: "planner", label: "Planner" },
+  { id: "live", label: "Live" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -52,6 +54,49 @@ interface EntryTransfer {
 
 const scoreLabel = (s: number): string =>
   Number.isFinite(s) ? s.toFixed(1) : "—";
+
+const countdownLabel = (deadlineIso: string, now: number): string => {
+  const ms = new Date(deadlineIso).getTime() - now;
+  if (!Number.isFinite(ms)) return "";
+  if (ms <= 0) return "Deadline passed — lineups locked";
+  const d = Math.floor(ms / 86400000);
+  const h = Math.floor((ms % 86400000) / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  const parts = [
+    d > 0 ? `${d}d` : null,
+    `${h}h`,
+    `${m}m`,
+  ].filter((x): x is string => x !== null);
+  return `Deadline in ${new Intl.ListFormat("en", { style: "narrow" }).format(parts)}`;
+};
+
+function DeadlineCountdown() {
+  const [next, setNext] = useState<{ id: number; deadline_time: string } | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    let live = true;
+    fetch("/api/fpl/bootstrap-static/")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (!live || !j) return;
+        const ev = (j.events as Array<{ id: number; is_next: boolean; deadline_time: string }>).find((e) => e.is_next);
+        if (ev) setNext({ id: ev.id, deadline_time: ev.deadline_time });
+      })
+      .catch(() => undefined);
+    const t = setInterval(() => setNow(Date.now()), 20000);
+    return () => {
+      live = false;
+      clearInterval(t);
+    };
+  }, []);
+  if (!next) return null;
+  return (
+    <p className="deadline" role="status">
+      <span className="livedot" aria-hidden="true" />
+      GW{next.id} · {countdownLabel(next.deadline_time, now)}
+    </p>
+  );
+}
 
 const fdrClass = (diff: number | null): string =>
   diff === null ? "fdr-none" : `fdr-${diff}`;
@@ -324,6 +369,7 @@ export default function Home() {
     history: EntryHistory | null;
     transfers: EntryTransfer[] | null;
     usedXpts: boolean;
+    entryId: string;
   } | null>(null);
 
   const resolveEntryId = async (id: string, q: string, boot: Bootstrap): Promise<string> => {
@@ -444,6 +490,7 @@ export default function Home() {
         history,
         transfers,
         usedXpts,
+        entryId: resolvedId,
       });
       setTab("xi");
     } catch (e) {
@@ -458,6 +505,7 @@ export default function Home() {
       <header className="header">
         <h1>FPL Team Analysis</h1>
         <p>Free FPL API + Understat only. Next 5 gameweeks. Blended xP, not bookmaker odds.</p>
+        <DeadlineCountdown />
       </header>
 
       <form
@@ -467,17 +515,20 @@ export default function Home() {
           void analyze();
         }}
       >
+        <a className="skip" href="#results">Skip to results</a>
         <div className="field">
           <label className="field-label" htmlFor="entry-id">
             FPL Entry ID
           </label>
           <input
             id="entry-id"
+            name="entry-id"
             value={entryId}
             onChange={(e) => setEntryId(e.target.value)}
-            placeholder="e.g. 1330334"
+            placeholder="e.g. 1330334…"
             inputMode="numeric"
             autoComplete="off"
+            spellCheck={false}
           />
         </div>
         <div className="field">
@@ -486,10 +537,12 @@ export default function Home() {
           </label>
           <input
             id="team-query"
+            name="team-query"
             value={teamQuery}
             onChange={(e) => setTeamQuery(e.target.value)}
-            placeholder="e.g. Arsenal — ID preferred"
+            placeholder="e.g. Arsenal — ID preferred…"
             autoComplete="off"
+            spellCheck={false}
           />
         </div>
         <button className="btn" type="submit" disabled={loading}>
@@ -516,6 +569,7 @@ export default function Home() {
 
       {result && (
         <section
+          id="results"
           className="results"
           aria-label={`Gameweek ${result.gw} best XI`}
         >
@@ -744,6 +798,9 @@ export default function Home() {
             gwIds={result.gwIds.slice(0, 3)}
             gwFixtures={result.gwFixtures.slice(0, 3)}
           />
+          )}
+          {tab === "live" && (
+            <LiveMatchday entryId={result.entryId} boot={result.boot} />
           )}
         </section>
       )}
