@@ -22,7 +22,72 @@ export interface FplElement {
   expected_assists: string;
   expected_goal_involvements: string;
   ict_index: string;
+  transfers_in_event: number;
+  transfers_out_event: number;
+  minutes: number;
+  bonus: number;
+  clean_sheets: number;
+  goals_conceded: number;
 }
+
+// Understat (free, no key) — per-player xG/xA, matched by name.
+export interface UnderstatPlayer {
+  id: string;
+  player_name: string;
+  team_title: string;
+  xG: string;
+  xA: string;
+  npxG: string;
+  minutes: string;
+  apps: string;
+}
+
+export const understatPer90 = (
+  u: UnderstatPlayer | undefined,
+): { npxG90: number; xA90: number; minsReliability: number } => {
+  if (!u) return { npxG90: 0, xA90: 0, minsReliability: 0.5 };
+  const mins = num(u.minutes);
+  const apps = Math.max(1, num(u.apps));
+  const per90 = mins > 0 ? 90 / mins : 0;
+  const mpg = mins / apps;
+  return {
+    npxG90: num(u.npxG) * per90,
+    xA90: num(u.xA) * per90,
+    minsReliability: mpg >= 75 ? 1 : mpg >= 60 ? 0.8 : mpg >= 30 ? 0.5 : 0.25,
+  };
+};
+
+// Blended true-xP proxy: FPL form/ppg + Understat per-90 + fixture ease + minutes.
+export const xPtsFor = (
+  p: FplElement,
+  u: UnderstatPlayer | undefined,
+  ease: number,
+  avail: number,
+): number => {
+  const { npxG90, xA90, minsReliability } = understatPer90(u);
+  const base =
+    num(p.form) * 0.35 +
+    num(p.points_per_game) * 0.25 +
+    npxG90 * 0.9 +
+    xA90 * 0.7 +
+    num(p.bonus) * 0.02 +
+    ease * 0.6 +
+    minsReliability * 0.5;
+  return avail === 0 ? -Infinity : base * (0.25 + 0.75 * avail);
+};
+
+export const matchUnderstat = (
+  p: FplElement,
+  list: UnderstatPlayer[],
+): UnderstatPlayer | undefined => {
+  const key = `${p.first_name} ${p.second_name}`.toLowerCase().trim();
+  const web = p.web_name.toLowerCase().trim();
+  return (
+    list.find((u) => u.player_name.toLowerCase().trim() === key) ??
+    list.find((u) => u.player_name.toLowerCase().includes(web)) ??
+    list.find((u) => web.includes(u.player_name.toLowerCase().split(" ").slice(-1)[0] ?? "§"))
+  );
+};
 
 export interface FplTeam {
   id: number;

@@ -154,6 +154,36 @@ export const pickCaptaincy = (
   return { captain: pool[0], vice: pool[1] ?? pool[0] };
 };
 
+export const pickCaptaincyTop3 = (xi: Scored[]): Scored[] =>
+  [...xi].sort((a, b) => b.score - a.score).slice(0, 3);
+
+export const isDifferential = (p: Scored, xi: Scored[]): boolean => {
+  if (p.selectedPct >= 12) return false;
+  const sorted = [...xi].sort((a, b) => b.score - a.score);
+  return sorted.slice(0, Math.ceil(sorted.length / 2)).some((s) => s.id === p.id);
+};
+
+export const rateTeam = (
+  xi: Scored[],
+  squad: Scored[],
+): { rate: number; grade: string } => {
+  const xiTotal = xi.reduce((s, p) => s + p.score, 0);
+  const optimal = [...squad]
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 11)
+    .reduce((s, p) => s + p.score, 0);
+  const rate =
+    !Number.isFinite(xiTotal) || !(optimal > 0)
+      ? 0
+      : Math.min(99, Math.max(0, Math.round((100 * xiTotal) / optimal)));
+  const grade =
+    rate >= 90 ? "S" : rate >= 80 ? "A" : rate >= 65 ? "B" : rate >= 50 ? "C" : rate >= 35 ? "D" : "F";
+  return { rate, grade };
+};
+
+export const isHitWorthIt = (hits: number, gain: number | null): boolean | null =>
+  gain === null ? null : gain > hits * 4;
+
 // 3–4 sentence verdict on the standout pick. Deterministic, numbers only.
 export const summarizeXi = (
   xi: Scored[],

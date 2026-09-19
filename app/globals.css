@@ -284,6 +284,106 @@ body {
   color: var(--gold);
 }
 
+.badge-diff {
+  border: 1px solid var(--lime);
+  color: var(--lime);
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.toggle {
+  margin-left: auto;
+  padding: 2px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ratebar {
+  height: 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.ratebar-fill {
+  height: 100%;
+  background: var(--gold);
+}
+
+.ticker-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.ticker {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 560px;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.ticker th,
+.ticker td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.ticker thead th {
+  color: var(--faint);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.split {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.split h4 {
+  margin: 0 0 6px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--faint);
+}
+
+.moves {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.moves strong {
+  color: var(--text);
+}
+
+.bankline {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
 .chips {
   display: flex;
   flex-wrap: wrap;
