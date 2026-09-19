@@ -9,7 +9,8 @@ Scope: Next.js Vercel app. Input = FPL Entry ID. Output = best XI (legal formati
 - [x] app/api proxy route (CORS bypass)
 - [x] app/page.tsx UI (Entry-ID input + XI + C/VC + reasons)
 - [x] CI workflow (typecheck, no local build) — fixed: npm install (no lockfile locally), hardened edge cases
-- [ ] push to GitHub + Vercel deploy (needs your confirmation / repo URL)
+- [x] push to GitHub — DONE: https://github.com/Jeff-tek/fpl-xi-picker (main @ eb43e1b)
+- [ ] Vercel deploy — import Jeff-tek/fpl-xi-picker, root dir fpl-team-analysis/
 
 ## Changed files
 - fpl-team-analysis/package.json — Next 14 + React 18, typecheck script
@@ -22,14 +23,15 @@ Scope: Next.js Vercel app. Input = FPL Entry ID. Output = best XI (legal formati
 
 ## Commands
 - No local npm install/build per your loop. CI runs `npm run typecheck` (tsc --noEmit).
-- To deploy: create GitHub repo, push `fpl-team-analysis/`, import into Vercel.
+- Repo: https://github.com/Jeff-tek/fpl-xi-picker — local path /root/fpl-team-analysis, branch main.
+- Vercel: import Jeff-tek/fpl-xi-picker (project root = repo root if repo was created from folder; else set root dir).
 
 ## Gotchas
 - FPL API is undocumented, CORS-blocked in browser → must proxy via Next API routes.
 - Subagent models failing earlier (ling/deepseek flash not found) → implemented directly.
 - LSP daemon unreachable in this env → verified by manual review, not lsp_diagnostics.
 - Picks for future GW may 404 → UI falls back to current GW squad.
-- Git identity: Jeff-tek <75492107+Jeff-tek@users.noreply.github.com> — no commit/push done, awaiting instruction.
+- Git identity: Jeff-tek <75492107+Jeff-tek@users.noreply.github.com> — committed + pushed as eb43e1b.
 
 ## Resume
-- Code is push-ready under /root/fpl-team-analysis/. Next: `git init + push` (if you confirm repo name), then Vercel import.
+- Pushed to https://github.com/Jeff-tek/fpl-xi-picker (main). Next: Vercel import + enter Entry ID to verify XI.
