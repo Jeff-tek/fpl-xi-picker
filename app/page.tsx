@@ -549,6 +549,8 @@ export default function Home() {
               <div className="ratebar-fill" style={{ width: `${result.rating.rate}%` }} />
             </div>
           </section>
+            </>
+          )}
           {tab === "captain" && (
           <section className="line" aria-label="Captain ranking">
             <h3>Armband ranking · top 3</h3>
@@ -577,8 +579,6 @@ export default function Home() {
           </section>
           )}
           {tab === "fixtures" && (
-          <section className="line" aria-label="Fixture ticker">
-            <h3>Next 5 fixtures</h3>
           <section className="line" aria-label="Fixture ticker">
             <h3>Next 5 fixtures</h3>
             <div className="ticker-wrap">
