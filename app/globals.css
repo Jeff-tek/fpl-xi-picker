@@ -1,29 +1,35 @@
-/* FPL Team Analysis — dark pitch-green theme. Solid colors, no gradients. */
+/* FPL Team Analysis — ZenitHub light theme: porcelain, paper, ink, cobalt. */
 
 :root {
-  --bg: #0a1a12;
-  --surface: #0f2418;
-  --surface-2: #14301f;
-  --border: #1f3d2b;
+  --bg: #f7f7f3;
+  --surface: #ffffff;
+  --surface-2: #f1f5f7;
+  --border: #10152a24;
   --pitch: #1a5230;
-  --pitch-line: rgba(233, 243, 236, 0.5);
-  --text: #e9f3ec;
-  --muted: #b9d2c0;
-  --faint: #93b69e;
-  --gold: #e8b923;
-  --gold-dim: rgba(232, 185, 35, 0.45);
-  --gold-text: #1c1503;
-  --green: #4ade80;
-  --lime: #a3e635;
-  --amber: #fbbf24;
-  --red: #f87171;
-  --green-tint: rgba(74, 222, 128, 0.12);
-  --lime-tint: rgba(163, 230, 53, 0.12);
-  --amber-tint: rgba(251, 191, 36, 0.12);
-  --red-tint: rgba(248, 113, 113, 0.1);
-  --radius: 10px;
-  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+  --pitch-line: rgba(255, 255, 255, 0.85);
+  --pitch-text: #e9f3ec;
+  --pitch-green: #4ade80;
+  --text: #0b1024;
+  --muted: #4b5060;
+  --faint: #5b6070;
+  --accent: #244bff;
+  --accent-dark: #1736b8;
+  --coral: #d94f45;
+  --gold: #244bff;
+  --gold-dim: #235cff47;
+  --gold-text: #ffffff;
+  --green: #15803d;
+  --lime: #3f6212;
+  --amber: #b45309;
+  --red: #b91c1c;
+  --green-tint: rgba(21, 128, 61, 0.12);
+  --lime-tint: rgba(63, 98, 18, 0.12);
+  --amber-tint: rgba(180, 83, 9, 0.12);
+  --red-tint: rgba(185, 28, 28, 0.1);
+  --radius: 8px;
+  --font: "Instrument Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
     sans-serif;
+  --font-serif: "Newsreader", Georgia, "Times New Roman", serif;
 }
 
 * {
@@ -52,23 +58,31 @@ body {
 
 .header {
   margin-bottom: 24px;
-  border-top: 3px solid var(--gold);
+  border-top: 3px solid var(--coral);
   padding-top: 14px;
 }
 
 .kicker {
   margin: 0 0 2px;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   font-weight: 700;
-  color: var(--gold);
+  color: var(--coral);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .header h1 {
   margin: 0 0 4px;
-  font-size: clamp(2rem, 7vw, 2.9rem);
-  line-height: 1.02;
+  font-size: clamp(2.35rem, 5.2vw, 3.1rem);
+  line-height: 0.94;
   letter-spacing: -0.04em;
   text-wrap: balance;
+}
+
+.header h1 em {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
 }
 
 .header p {
@@ -83,6 +97,11 @@ body {
   flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: clamp(16px, 3vw, 24px);
+  box-shadow: 0 14px 34px rgba(16, 21, 42, 0.08);
 }
 
 .field {
@@ -107,6 +126,7 @@ body {
   background: var(--surface);
   color: var(--text);
   font: inherit;
+  min-height: 2.75rem;
   font-variant-numeric: tabular-nums;
 }
 
@@ -116,23 +136,26 @@ body {
 }
 
 .field input:focus-visible {
-  outline: 2px solid var(--gold);
+  outline: 2px solid var(--accent-dark);
   outline-offset: 1px;
 }
 
 .btn {
   padding: 10px 18px;
-  border: 1px solid var(--gold);
+  border: 1px solid var(--accent);
   border-radius: var(--radius);
-  background: var(--gold);
+  background: var(--accent);
   color: var(--gold-text);
   font: inherit;
   font-weight: 700;
+  min-height: 2.75rem;
   cursor: pointer;
+  box-shadow: 0 18px 40px rgba(11, 16, 36, 0.1);
 }
 
 .btn:hover {
-  background: #f5c93d;
+  background: var(--accent-dark);
+  transform: translateY(-1px);
 }
 
 .btn:disabled {
@@ -141,7 +164,7 @@ body {
 }
 
 .btn:focus-visible {
-  outline: 2px solid var(--text);
+  outline: 3px solid var(--accent-dark);
   outline-offset: 2px;
 }
 
@@ -156,7 +179,7 @@ body {
   border: 1px solid var(--red);
   border-radius: var(--radius);
   background: var(--red-tint);
-  color: #fca5a5;
+  color: var(--red);
 }
 
 .hint {
@@ -182,10 +205,11 @@ body {
 
 .verdict {
   padding: 14px 16px;
-  border: 1px solid var(--gold-dim);
-  border-left: 4px solid var(--gold);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
   border-radius: 14px;
-  background: linear-gradient(to bottom, rgba(232, 185, 35, 0.1), rgba(232, 185, 35, 0.02)), var(--surface);
+  background: var(--surface);
+  box-shadow: 0 14px 34px rgba(16, 21, 42, 0.08);
 }
 
 .verdict h3 {
@@ -201,9 +225,10 @@ body {
   gap: 14px;
   flex-wrap: wrap;
   padding: 14px 16px;
-  border: 1px solid var(--gold-dim);
+  border: 1px solid var(--border);
   border-radius: 14px;
-  background: var(--surface-2);
+  background: var(--surface);
+  box-shadow: 0 14px 34px rgba(16, 21, 42, 0.08);
 }
 
 .scoreboard-total {
@@ -212,6 +237,7 @@ body {
   letter-spacing: -0.04em;
   font-variant-numeric: tabular-nums;
   line-height: 1;
+  color: var(--accent);
 }
 
 .scoreboard-label {
@@ -268,12 +294,17 @@ body {
   gap: 8px;
   padding: 12px 14px;
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: 8px;
   background: var(--surface);
+  box-shadow: 0 14px 34px rgba(16, 21, 42, 0.08);
+}
+
+.card:hover {
+  transform: translateY(-2px);
 }
 
 .card--captain {
-  border-color: var(--gold);
+  border: 2px solid var(--accent);
 }
 
 .card--vice {
@@ -360,13 +391,13 @@ body {
   height: 10px;
   border: 1px solid var(--border);
   border-radius: 999px;
-  background: var(--surface-2);
+  background: #e7ecf0;
   overflow: hidden;
 }
 
 .ratebar-fill {
   height: 100%;
-  background: var(--gold);
+  background: var(--accent);
 }
 
 .ticker-wrap {
@@ -374,6 +405,7 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--surface);
+  box-shadow: 0 14px 34px rgba(16, 21, 42, 0.08);
 }
 
 .ticker {
@@ -397,6 +429,10 @@ body {
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--surface);
 }
 
 .split {
@@ -469,6 +505,7 @@ body {
   color: var(--text);
   font: inherit;
   max-width: 100%;
+  min-height: 2.75rem;
 }
 
 .ticker select {
@@ -483,14 +520,14 @@ body {
 
 .row-active th,
 .row-active td {
-  background: var(--green-tint);
+  background: rgba(36, 75, 255, 0.06);
 }
 
 .gwlink {
   padding: 0;
   border: none;
   background: none;
-  color: var(--gold);
+  color: var(--accent-dark);
   font: inherit;
   font-weight: 700;
   cursor: pointer;
@@ -517,9 +554,14 @@ body {
 }
 
 .tab--active {
-  border-color: var(--gold);
-  background: var(--gold);
+  border-color: var(--accent);
+  background: var(--accent);
   color: var(--gold-text);
+}
+
+.tab:focus-visible {
+  outline: 3px solid var(--accent-dark);
+  outline-offset: 1px;
 }
 
 .tabs {
@@ -545,7 +587,7 @@ body {
 
 .flag-ok {
   padding: 2px 9px;
-  border: 1px solid rgba(74, 222, 128, 0.4);
+  border: 1px solid rgba(21, 128, 61, 0.4);
   border-radius: 999px;
   background: var(--green-tint);
   color: var(--green);
@@ -579,7 +621,7 @@ body {
 }
 
 html {
-  color-scheme: dark;
+  color-scheme: light;
   scroll-behavior: smooth;
 }
 
@@ -589,7 +631,6 @@ select,
   touch-action: manipulation;
 }
 
-.btn:hover,
 .toggle:hover,
 .mini:hover,
 .tab:hover,
@@ -668,25 +709,25 @@ select,
 }
 
 .fdr-2 {
-  border: 1px solid rgba(74, 222, 128, 0.4);
+  border: 1px solid rgba(21, 128, 61, 0.4);
   background: var(--green-tint);
   color: var(--green);
 }
 
 .fdr-3 {
-  border: 1px solid rgba(163, 230, 53, 0.4);
+  border: 1px solid rgba(63, 98, 18, 0.4);
   background: var(--lime-tint);
   color: var(--lime);
 }
 
 .fdr-4 {
-  border: 1px solid rgba(251, 191, 36, 0.4);
+  border: 1px solid rgba(180, 83, 9, 0.4);
   background: var(--amber-tint);
   color: var(--amber);
 }
 
 .fdr-5 {
-  border: 1px solid rgba(248, 113, 113, 0.45);
+  border: 1px solid rgba(185, 28, 28, 0.45);
   background: var(--red-tint);
   color: var(--red);
 }
@@ -699,7 +740,7 @@ select,
 
 .flag-warn {
   padding: 2px 9px;
-  border: 1px solid rgba(251, 191, 36, 0.4);
+  border: 1px solid rgba(180, 83, 9, 0.4);
   border-radius: 999px;
   background: var(--amber-tint);
   color: var(--amber);
@@ -711,7 +752,7 @@ select,
 
 .flag-out {
   padding: 2px 9px;
-  border: 1px solid rgba(248, 113, 113, 0.45);
+  border: 1px solid rgba(185, 28, 28, 0.45);
   border-radius: 999px;
   background: var(--red-tint);
   color: var(--red);
@@ -853,7 +894,7 @@ select,
     ),
     var(--pitch);
   overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 24px 70px rgba(11, 16, 36, 0.25);
 }
 
 .pitch-halfway {
@@ -971,16 +1012,16 @@ select,
   padding: 6px 8px 5px;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: rgba(10, 26, 18, 0.92);
+  background: var(--surface);
   color: var(--text);
   font: inherit;
   cursor: default;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 2px 8px rgba(11, 16, 36, 0.25);
 }
 
 .pitch-marker--captain {
-  border-color: var(--gold);
-  box-shadow: 0 0 0 2px var(--gold-dim), 0 2px 12px rgba(0, 0, 0, 0.5);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--gold-dim), 0 2px 12px rgba(11, 16, 36, 0.3);
 }
 
 .pitch-marker--vice {
@@ -1002,7 +1043,7 @@ select,
   margin-top: 4px;
   padding: 2px 8px;
   border-radius: 999px;
-  background: #060f0a;
+  background: var(--surface-2);
 }
 
 .pitch-marker-label {
@@ -1016,9 +1057,9 @@ select,
 
 .pitch-marker-live {
   padding: 1px 8px;
-  border: 1px solid rgba(74, 222, 128, 0.45);
+  border: 1px solid rgba(21, 128, 61, 0.45);
   border-radius: 999px;
-  background: rgba(74, 222, 128, 0.14);
+  background: var(--green-tint);
   color: var(--green);
   font-size: clamp(0.72rem, 2.4vw, 0.9rem);
   font-weight: 800;

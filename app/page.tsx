@@ -536,7 +536,9 @@ export default function Home() {
     <main className="main">
       <header className="header">
         <p className="kicker">Matchday team-sheet · Free tools only</p>
-        <h1>FPL Team Analysis</h1>
+        <h1>
+          FPL <em>Team Analysis</em>
+        </h1>
         <p>Free FPL API + Understat only. Next 5 gameweeks. Blended xP, not bookmaker odds.</p>
         <DeadlineCountdown />
       </header>
