@@ -14,6 +14,7 @@ export interface Scored {
   name: string;
   type: number;
   team: number;
+  teamCode: number;
   score: number;
   reasons: string[];
   // Detail fields surfaced in the UI (heuristic inputs, not predictions).
@@ -39,6 +40,7 @@ export const scorePlayer = (
   fixtures: FplFixture[],
   eventId: number,
   teamsById: Map<number, string>,
+  codesById: Map<number, number>,
 ): Scored => {
   const reasons: string[] = [];
   const form = num(p.form);
@@ -83,6 +85,7 @@ export const scorePlayer = (
     name: displayName(p),
     type: p.element_type,
     team: p.team,
+    teamCode: codesById.get(p.team) ?? 0,
     score: avail === 0 ? -Infinity : score * (0.25 + 0.75 * avail),
     reasons,
     teamName: teamsById.get(p.team) ?? `Team ${p.team}`,
@@ -149,4 +152,31 @@ export const pickCaptaincy = (
   const outfield = sorted.filter((s) => s.type !== 1);
   const pool = outfield.length >= 2 ? outfield : sorted;
   return { captain: pool[0], vice: pool[1] ?? pool[0] };
+};
+
+// 3–4 sentence verdict on the standout pick. Deterministic, numbers only.
+export const summarizeXi = (
+  xi: Scored[],
+  captain: Scored,
+  vice: Scored,
+): string[] => {
+  const sorted = [...xi].sort((a, b) => b.score - a.score);
+  const best = sorted[0];
+  const runnerUp = sorted[1];
+  const out = [
+    runnerUp && runnerUp.id !== best.id
+      ? `${best.name} (${best.teamName}) tops your XI at ${best.score.toFixed(1)}, ${(best.score - runnerUp.score).toFixed(1)} clear of ${runnerUp.name}.`
+      : `${best.name} (${best.teamName}) is your standout pick at ${best.score.toFixed(1)}.`,
+    best.diff === null
+      ? `No confirmed fixture yet, so the score leans on ${best.form.toFixed(1)} form and ${best.xgi.toFixed(2)} xGI.`
+      : `${best.home ? "Home to" : "Away at"} ${best.opp} with FDR ${best.diff} — backed by ${best.form.toFixed(1)} form and ${best.xgi.toFixed(2)} xGI.`,
+    `${captain.name} takes the armband${vice.id !== captain.id ? ` with ${vice.name} as cover` : ""}.`,
+  ];
+  if (best.avail === 0)
+    out.push(`Flag: currently ruled out — line up a replacement.`);
+  else if (best.avail < 1)
+    out.push(
+      `Flag: only ${Math.round(best.avail * 100)}% availability — keep a bench plan ready.`,
+    );
+  return out;
 };

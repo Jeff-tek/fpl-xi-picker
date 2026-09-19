@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import type { Bootstrap, FplFixture, FplPick } from "../lib/fpl";
+import { shirtUrl } from "../lib/fpl";
 import type { Scored } from "../lib/select";
-import { pickCaptaincy, pickXi, scorePlayer } from "../lib/select";
+import { pickCaptaincy, pickXi, scorePlayer, summarizeXi } from "../lib/select";
 
 const get = async <T,>(path: string): Promise<T> => {
   const r = await fetch(`/api/fpl/${path}`);
@@ -34,6 +35,39 @@ const fixtureLabel = (p: Scored): string =>
     ? "No fixture"
     : `${p.home ? "H" : "A"} vs ${p.opp} · FDR ${p.diff}`;
 
+// Official FPL 66px shirt PNG with an initial-letter CSS fallback.
+function Shirt({
+  teamCode,
+  teamName,
+  isGk,
+  className,
+}: {
+  teamCode: number;
+  teamName: string;
+  isGk: boolean;
+  className: string;
+}) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <span
+      className={`${className}${loaded ? " shirt--loaded" : ""}`}
+      data-initial={teamName.charAt(0)}
+    >
+      <img
+        src={shirtUrl(teamCode, isGk)}
+        alt={`${teamName} shirt`}
+        width={66}
+        height={66}
+        loading="lazy"
+        onLoad={() => setLoaded(true)}
+        onError={(e) => {
+          e.currentTarget.hidden = true;
+        }}
+      />
+    </span>
+  );
+}
+
 function PlayerCard({
   p,
   isCaptain,
@@ -48,6 +82,12 @@ function PlayerCard({
       className={`card${isCaptain ? " card--captain" : isVice ? " card--vice" : ""}`}
     >
       <div className="card-head">
+        <Shirt
+          className="card-shirt"
+          teamCode={p.teamCode}
+          teamName={p.teamName}
+          isGk={p.type === 1}
+        />
         {isCaptain && <span className="badge badge-c">C</span>}
         {isVice && <span className="badge badge-vc">VC</span>}
         <span className="card-name">{p.name}</span>
@@ -133,6 +173,12 @@ function PitchMarker({
         className={`pitch-marker${isCaptain ? " pitch-marker--captain" : isVice ? " pitch-marker--vice" : ""}`}
         title={`${p.name} · ${p.teamName} · ${fixtureLabel(p)} · ${scoreLabel(p.score)} pts`}
       >
+        <Shirt
+          className="pitch-marker-shirt"
+          teamCode={p.teamCode}
+          teamName={p.teamName}
+          isGk={p.type === 1}
+        />
         <span className="pitch-marker-name">
           {isCaptain && <span className="badge badge-c">C</span>}
           {isVice && <span className="badge badge-vc">VC</span>}
@@ -201,6 +247,7 @@ export default function Home() {
     bench: ReturnType<typeof pickXi>;
     captain: number;
     vice: number;
+    verdict: string[];
   } | null>(null);
 
   const analyze = async () => {
@@ -225,9 +272,10 @@ export default function Home() {
       });
       const byId = new Map(boot.elements.map((e) => [e.id, e]));
       const teamsById = new Map(boot.teams.map((t) => [t.id, t.short_name]));
+      const codesById = new Map(boot.teams.map((t) => [t.id, t.code]));
       const squad = picks.picks.flatMap((p) => {
         const el = byId.get(p.element);
-        return el ? [scorePlayer(el, fixtures, next.id, teamsById)] : [];
+        return el ? [scorePlayer(el, fixtures, next.id, teamsById, codesById)] : [];
       });
       const xi = pickXi(squad);
       if (xi.length === 0) throw new Error("Could not form a legal XI from this squad.");
@@ -236,7 +284,14 @@ export default function Home() {
         .filter((s) => !xiIds.has(s.id))
         .sort((a, b) => b.score - a.score);
       const { captain, vice } = pickCaptaincy(xi);
-      setResult({ gw: next.id, xi, bench, captain: captain.id, vice: vice.id });
+      setResult({
+        gw: next.id,
+        xi,
+        bench,
+        captain: captain.id,
+        vice: vice.id,
+        verdict: summarizeXi(xi, captain, vice),
+      });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Analysis failed.");
     } finally {
@@ -299,6 +354,10 @@ export default function Home() {
           aria-label={`Gameweek ${result.gw} best XI`}
         >
           <h2 className="gw-title">Gameweek {result.gw} — Best XI</h2>
+          <section className="verdict" aria-label="Standout pick">
+            <h3>Standout pick</h3>
+            <p>{result.verdict.join(" ")}</p>
+          </section>
           <PitchView
             xi={result.xi}
             captain={result.captain}

@@ -26,6 +26,7 @@ export interface FplElement {
 
 export interface FplTeam {
   id: number;
+  code: number;
   name: string;
   short_name: string;
   strength_attack_home: number;
@@ -108,3 +109,7 @@ export const isHome = (
   if (!f) return null;
   return f.team_h === teamId;
 };
+
+// Official FPL shirt asset (66px PNG). GK kits use the `_1` variant.
+export const shirtUrl = (teamCode: number, isGk: boolean): string =>
+  `https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_${teamCode}${isGk ? "_1" : ""}-66.png`;

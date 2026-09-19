@@ -13,14 +13,15 @@ Scope: Next.js Vercel app. Input = FPL Entry ID. Output = best XI (legal formati
 - [x] 502 diagnosis round 2 (2026-09-19): upstream healthy from non-Vercel (200, 1.7MB) → Vercel-egress specific. Proxy now aborts at 9s (Hobby 10s kill), validates JSON, streams raw body, includes fetch cause + upstream preview. UI surfaces proxy `error` message instead of bare status.
 - [x] visual revamp (2026-09-19, visual-engineering+frontend): extended Scored with detail fields (teamName/price/selectedPct/avail/form/ppg/xgi/ict/opp/home/diff/ease, formula untouched); new app/globals.css dark pitch-green solid colors + layout import; rewrote app/page.tsx — XI grouped by lines, C/VC badges, stat chips, FDR pills, availability flags, reasons sub-lines, compact bench, styled loading/error/empty states, labeled form (Enter submits). No new deps, no emojis.
 - [x] pitch view (visual-engineering+frontend): CSS-only pitch (markings via divs, aspect 3/4) with XI markers by line (FWD/MID/DEF/GKP rows), best-in-middle spread, formation label, C/VC badges, keyboard-focusable markers with title detail. Detail cards + bench preserved below.
+- [x] team kits on pitch + FPL-style cards (2026-09-19): FplTeam.code + shirtUrl(teamCode,isGk) in lib/fpl.ts; Scored.teamCode threaded through scorePlayer via codesById param (formula untouched); Shirt component (official FPL 66px PNG, loading=lazy, width/height 66, onError hides img → CSS initial-letter fallback via data-initial + ::before, onLoad hides fallback); pitch markers now shirt + name bar + score chip; card heads gain 44px shirt thumbnail; card-name ellipsis. No new deps, no emojis, official FPL host only. Typecheck pending CI (no local build per loop).
 - [ ] Vercel deploy — import Jeff-tek/fpl-xi-picker, root dir fpl-team-analysis/
 - Gotcha 2026-09-19: empty `FPL_API` env on Vercel + `??` kept `""` → relative fetch URL → "Failed to parse URL". Fixed with `.trim() || default`.
 
 ## Changed files
 - fpl-team-analysis/package.json — Next 14 + React 18, typecheck script
 - fpl-team-analysis/tsconfig.json, next.config.mjs, .gitignore, .env.example
-- fpl-team-analysis/lib/fpl.ts — FPL API types + num/availability/difficultyFor/isHome
-- fpl-team-analysis/lib/select.ts — scorePlayer (form+ppg+xGI+ICT+ease heuristic) + pickXi (legal formations) + pickCaptaincy (outfield pref, empty-XI guard)
+- fpl-team-analysis/lib/fpl.ts — FPL API types + num/availability/difficultyFor/isHome + shirtUrl (official shirt CDN, GK `_1` variant)
+- fpl-team-analysis/lib/select.ts — scorePlayer (form+ppg+xGI+ICT+ease heuristic, codesById param) + pickXi (legal formations) + pickCaptaincy (outfield pref, empty-XI guard)
 - fpl-team-analysis/app/layout.tsx, app/page.tsx — Entry-ID input, picks fallback (next→current GW), empty-XI guard
 - fpl-team-analysis/app/api/fpl/[...path]/route.ts — upstream proxy with 5-min revalidate
 - fpl-team-analysis/.github/workflows/ci.yml — setup-node 20 + npm install + npm run typecheck

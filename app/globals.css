@@ -167,6 +167,28 @@ body {
   font-size: 1.15rem;
 }
 
+.verdict {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--gold);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.verdict h3 {
+  margin: 0 0 4px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--gold);
+}
+
+.verdict p {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
 .line h3 {
   display: flex;
   align-items: center;
@@ -224,6 +246,9 @@ body {
   font-weight: 700;
   font-size: 1rem;
   min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .card-team {
@@ -396,6 +421,55 @@ body {
   color: var(--text);
 }
 
+/* Team shirt thumbnails — official FPL 66px PNGs, initial-letter fallback. */
+
+.shirt {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  overflow: hidden;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+
+.shirt::before {
+  content: attr(data-initial);
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.shirt img {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.shirt img[hidden] {
+  display: none;
+}
+
+.shirt--loaded::before {
+  display: none;
+}
+
+.card-shirt {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  font-size: 1.05rem;
+}
+
+.pitch-marker-shirt {
+  width: clamp(34px, 9vw, 48px);
+  height: clamp(34px, 9vw, 48px);
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
 /* Pitch view — CSS-only football pitch, flat solid greens. */
 
 .pitch-figure {
@@ -540,11 +614,11 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: 3px;
   width: 100%;
   max-width: 112px;
   margin: 0 auto;
-  padding: 5px 8px 4px;
+  padding: 6px 8px 5px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--surface);
@@ -584,8 +658,12 @@ body {
 }
 
 .pitch-marker-score {
+  padding: 1px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-2);
   font-size: clamp(0.72rem, 2.4vw, 0.9rem);
   font-weight: 800;
   font-variant-numeric: tabular-nums;
-  line-height: 1.1;
+  line-height: 1.3;
 }
