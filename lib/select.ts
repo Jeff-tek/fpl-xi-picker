@@ -6,6 +6,7 @@ import {
   displayName,
   isHome,
   num,
+  price,
 } from "./fpl";
 
 export interface Scored {
@@ -15,6 +16,19 @@ export interface Scored {
   team: number;
   score: number;
   reasons: string[];
+  // Detail fields surfaced in the UI (heuristic inputs, not predictions).
+  teamName: string;
+  price: number; // £m
+  selectedPct: number;
+  avail: number; // 0..1 chance of playing
+  form: number;
+  ppg: number;
+  xgi: number;
+  ict: number;
+  opp: string;
+  home: boolean | null;
+  diff: number | null; // FDR 2 (easiest) .. 5 (hardest)
+  ease: number;
 }
 
 // Heuristic expected-points proxy for the NEXT gameweek only.
@@ -71,6 +85,18 @@ export const scorePlayer = (
     team: p.team,
     score: avail === 0 ? -Infinity : score * (0.25 + 0.75 * avail),
     reasons,
+    teamName: teamsById.get(p.team) ?? `Team ${p.team}`,
+    price: price(p),
+    selectedPct: num(p.selected_by_percent),
+    avail,
+    form,
+    ppg,
+    xgi,
+    ict,
+    opp,
+    home,
+    diff,
+    ease,
   };
 };
 
