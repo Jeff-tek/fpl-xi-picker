@@ -102,8 +102,8 @@ export async function GET(
     });
   } catch (e) {
     const status =
-      e instanceof Error && typeof (e as { status?: unknown }).status === "number"
-        ? ((e as { status: number }).status as number)
+      e instanceof Error && typeof (e as unknown as { status?: unknown }).status === "number"
+        ? (e as unknown as { status: number }).status
         : 502;
     const reason =
       e instanceof Error
