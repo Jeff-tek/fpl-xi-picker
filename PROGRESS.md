@@ -12,6 +12,7 @@ Scope: Next.js Vercel app. Input = FPL Entry ID. Output = best XI (legal formati
 - [x] push to GitHub — DONE: https://github.com/Jeff-tek/fpl-xi-picker (main @ eb43e1b)
 - [x] 502 diagnosis round 2 (2026-09-19): upstream healthy from non-Vercel (200, 1.7MB) → Vercel-egress specific. Proxy now aborts at 9s (Hobby 10s kill), validates JSON, streams raw body, includes fetch cause + upstream preview. UI surfaces proxy `error` message instead of bare status.
 - [x] visual revamp (2026-09-19, visual-engineering+frontend): extended Scored with detail fields (teamName/price/selectedPct/avail/form/ppg/xgi/ict/opp/home/diff/ease, formula untouched); new app/globals.css dark pitch-green solid colors + layout import; rewrote app/page.tsx — XI grouped by lines, C/VC badges, stat chips, FDR pills, availability flags, reasons sub-lines, compact bench, styled loading/error/empty states, labeled form (Enter submits). No new deps, no emojis.
+- [x] pitch view (visual-engineering+frontend): CSS-only pitch (markings via divs, aspect 3/4) with XI markers by line (FWD/MID/DEF/GKP rows), best-in-middle spread, formation label, C/VC badges, keyboard-focusable markers with title detail. Detail cards + bench preserved below.
 - [ ] Vercel deploy — import Jeff-tek/fpl-xi-picker, root dir fpl-team-analysis/
 - Gotcha 2026-09-19: empty `FPL_API` env on Vercel + `??` kept `""` → relative fetch URL → "Failed to parse URL". Fixed with `.trim() || default`.
 

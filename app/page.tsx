@@ -90,6 +90,107 @@ function PlayerCard({
   );
 }
 
+const PITCH_ROWS: ReadonlyArray<{
+  type: number;
+  label: string;
+  cls: string;
+}> = [
+  { type: 4, label: "Forwards", cls: "pitch-row--fwd" },
+  { type: 3, label: "Midfielders", cls: "pitch-row--mid" },
+  { type: 2, label: "Defenders", cls: "pitch-row--def" },
+  { type: 1, label: "Goalkeeper", cls: "pitch-row--gkp" },
+];
+
+// FPL carries no left/right/centre data — spread by score, best in the middle.
+const spread = (players: Scored[]): Scored[] => {
+  const sorted = [...players].sort((a, b) => b.score - a.score);
+  const out: Scored[] = [];
+  sorted.forEach((p, i) => {
+    if (i % 2 === 0) out.push(p);
+    else out.unshift(p);
+  });
+  return out;
+};
+
+const formationLabel = (xi: Scored[]): string => {
+  const count = (t: number) => xi.filter((p) => p.type === t).length;
+  return `${count(2)}-${count(3)}-${count(4)}`;
+};
+
+function PitchMarker({
+  p,
+  isCaptain,
+  isVice,
+}: {
+  p: Scored;
+  isCaptain: boolean;
+  isVice: boolean;
+}) {
+  return (
+    <li className="pitch-slot">
+      <button
+        type="button"
+        className={`pitch-marker${isCaptain ? " pitch-marker--captain" : isVice ? " pitch-marker--vice" : ""}`}
+        title={`${p.name} · ${p.teamName} · ${fixtureLabel(p)} · ${scoreLabel(p.score)} pts`}
+      >
+        <span className="pitch-marker-name">
+          {isCaptain && <span className="badge badge-c">C</span>}
+          {isVice && <span className="badge badge-vc">VC</span>}
+          <span className="pitch-marker-label">{p.name}</span>
+        </span>
+        <span className="pitch-marker-score">{scoreLabel(p.score)}</span>
+      </button>
+    </li>
+  );
+}
+
+function PitchView({
+  xi,
+  captain,
+  vice,
+}: {
+  xi: Scored[];
+  captain: number;
+  vice: number;
+}) {
+  return (
+    <figure className="pitch-figure">
+      <figcaption className="pitch-caption">
+        Formation · {formationLabel(xi)}
+      </figcaption>
+      <div className="pitch">
+        <div className="pitch-halfway" aria-hidden="true" />
+        <div className="pitch-circle" aria-hidden="true" />
+        <div className="pitch-spot" aria-hidden="true" />
+        <div className="pitch-box pitch-box--top" aria-hidden="true" />
+        <div className="pitch-box pitch-box--bottom" aria-hidden="true" />
+        <div className="pitch-goal pitch-goal--top" aria-hidden="true" />
+        <div className="pitch-goal pitch-goal--bottom" aria-hidden="true" />
+        {PITCH_ROWS.map((row) => {
+          const players = spread(xi.filter((p) => p.type === row.type));
+          if (players.length === 0) return null;
+          return (
+            <ol
+              className={`pitch-row ${row.cls}`}
+              aria-label={row.label}
+              key={row.type}
+            >
+              {players.map((p) => (
+                <PitchMarker
+                  key={p.id}
+                  p={p}
+                  isCaptain={p.id === captain}
+                  isVice={p.id === vice}
+                />
+              ))}
+            </ol>
+          );
+        })}
+      </div>
+    </figure>
+  );
+}
+
 export default function Home() {
   const [entryId, setEntryId] = useState("");
   const [loading, setLoading] = useState(false);
@@ -198,6 +299,11 @@ export default function Home() {
           aria-label={`Gameweek ${result.gw} best XI`}
         >
           <h2 className="gw-title">Gameweek {result.gw} — Best XI</h2>
+          <PitchView
+            xi={result.xi}
+            captain={result.captain}
+            vice={result.vice}
+          />
           {[1, 2, 3, 4].map((t) => {
             const players = result.xi.filter((p) => p.type === t);
             if (players.length === 0) return null;
