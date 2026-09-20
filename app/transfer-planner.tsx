@@ -5,6 +5,7 @@ import type { Bootstrap, FplFixture } from "../lib/fpl";
 import { price as fplPrice } from "../lib/fpl";
 import type { Scored } from "../lib/select";
 import { pickCaptaincy, pickXi, scorePlayer } from "../lib/select";
+import { buildSuggestions } from "../lib/suggest";
 
 const CHIPS = ["—", "WC", "FH", "BB", "TC"] as const;
 
@@ -53,6 +54,7 @@ export default function TransferPlanner({ boot, initialSquadIds, bank, transfers
   const [inSel, setInSel] = useState("");
   const [chips, setChips] = useState<Record<number, string>>({});
   const [sellPrice, setSellPrice] = useState<number | null>(null);
+  const [sellById, setSellById] = useState<Map<number, number>>(new Map());
 
   const horizon = [0, 1, 2].filter((i) => gwIds[i] !== undefined);
 
@@ -82,9 +84,6 @@ export default function TransferPlanner({ boot, initialSquadIds, bank, transfers
     if (!outEl) return;
     let live = true;
     const current = outEl.now_cost;
-    // Prefer on-demand true selling price via resilient endpoint (1 fetch,
-    // retries + mirror, Vercel 9s budget). Falls back to client-side
-    // element-summary walk, then to current price.
     const run = async (): Promise<void> => {
       if (entryId) {
         try {
@@ -99,7 +98,7 @@ export default function TransferPlanner({ boot, initialSquadIds, bank, transfers
             }
           }
         } catch {
-          // fall through to local history walk
+          // fallback
         }
       }
       try {
@@ -140,6 +139,47 @@ export default function TransferPlanner({ boot, initialSquadIds, bank, transfers
       .slice(0, 8);
   }, [outEl, boot, squadIds, budget, gwFixtures, activeGw, gwIds, teamsById, codesById]);
 
+  const bankM = funds;
+  const suggestions = useMemo(
+    () => buildSuggestions(squadIds, boot, gwFixtures, gwIds, teamsById, codesById, sellById, bankM, activeGw),
+    [squadIds, boot, gwFixtures, gwIds, teamsById, codesById, sellById, bankM, activeGw],
+  );
+
+  useEffect(() => {
+    if (!entryId || squadIds.length === 0) return;
+    const weakIds = buildSuggestions(squadIds, boot, gwFixtures, gwIds, teamsById, codesById, new Map(), bankM, activeGw)
+      .map((s) => s.outId)
+      .slice(0, 4);
+    const missing = weakIds.filter((id) => !sellById.has(id));
+    if (missing.length === 0) return;
+    let live = true;
+    const run = async (): Promise<void> => {
+      for (const id of missing) {
+        const el = byId.get(id);
+        if (!el) continue;
+        try {
+          const r = await fetch(
+            `/api/fpl/selling-price?entryId=${encodeURIComponent(entryId)}&elementId=${id}&currentCost=${el.now_cost}`,
+          );
+          if (!r.ok) continue;
+          const j = (await r.json()) as { sell?: number };
+          if (!live || typeof j.sell !== "number") continue;
+          setSellById((m) => {
+            const next = new Map(m);
+            next.set(id, j.sell / 10);
+            return next;
+          });
+        } catch {
+          // ignore, fallback to current price in suggest
+        }
+      }
+    };
+    void run();
+    return () => {
+      live = false;
+    };
+  }, [entryId, squadIds, boot, gwFixtures, gwIds, teamsById, codesById, bankM, activeGw, byId, sellById]);
+
   const applyTransfer = (): void => {
     const inn = inSel ? Number(inSel) : NaN;
     if (!outEl || !byId.get(inn)) return;
@@ -155,6 +195,23 @@ export default function TransferPlanner({ boot, initialSquadIds, bank, transfers
     setSellPrice(null);
   };
 
+  const applySuggestion = (out: number, inn: number): void => {
+    const oEl = byId.get(out);
+    const iEl = byId.get(inn);
+    if (!oEl || !iEl) return;
+    const sellM = sellById.get(out) ?? fplPrice(oEl);
+    const cost = fplPrice(iEl) - sellM;
+    if (cost > funds + 1e-9) return;
+    setSquadIds((ids) => ids.map((id) => (id === out ? inn : id)));
+    setFunds((f) => Math.round((f - cost) * 10) / 10);
+    if (fts > 0) setFts((n) => n - 1);
+    else setHits((n) => n + 1);
+    setLog((l) => [...l, { gw: gwIds[activeGw], out, inn }]);
+    setOutSel("");
+    setInSel("");
+    setSellPrice(null);
+  };
+
   const reset = (): void => {
     setSquadIds(initialSquadIds);
     setFunds(bank ?? 0);
@@ -165,6 +222,7 @@ export default function TransferPlanner({ boot, initialSquadIds, bank, transfers
     setOutSel("");
     setInSel("");
     setSellPrice(null);
+    setSellById(new Map());
   };
 
   return (
@@ -182,6 +240,38 @@ export default function TransferPlanner({ boot, initialSquadIds, bank, transfers
         <span className="chip">Hits <strong>{hits}</strong> (−{hits * 4})</span>
         <button type="button" className="toggle" onClick={reset}>Reset plan</button>
       </div>
+      {suggestions.length > 0 && (
+        <div className="suggestions" role="region" aria-label="Suggested transfers">
+          <h4 className="suggestions-title">Suggested moves · GW{gwIds[activeGw]} focus</h4>
+          <ul className="suggestions-list">
+            {suggestions.map((s) => (
+              <li key={s.outId} className="suggestion">
+                <div className="suggestion-out">
+                  <span className="suggestion-sell">
+                    Sell <strong>{s.outName}</strong> · £{s.sellM.toFixed(1)}m → budget £{s.budgetM.toFixed(1)}m
+                  </span>
+                  <span className="chip chip--muted">3GW {s.outTotal.toFixed(1)} pts</span>
+                </div>
+                <ul className="suggestion-candidates">
+                  {s.candidates.map((c) => (
+                    <li key={c.player.id} className="suggestion-cand">
+                      <span>
+                        <strong>{c.player.name}</strong> · {c.player.teamName} · £{c.player.price.toFixed(1)}m · {c.player.score.toFixed(1)}
+                        <span className="delta"> +{c.delta.toFixed(1)}</span>
+                        {c.player.diff !== null && <span className={`pill-fdr fdr-${c.player.diff}`}> FDR {c.player.diff}</span>}
+                      </span>
+                      <button type="button" className="btn btn--small" onClick={() => applySuggestion(s.outId, c.player.id)}>
+                        Apply
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ul>
+          <p className="hint">Ranked by GW{activeGw !== undefined ? gwIds[activeGw] : ""} score delta; weakest 3GW totals surfaced first. True selling prices resolve on demand.</p>
+        </div>
+      )}
       <div className="ticker-wrap">
         <table className="ticker">
           <thead>
