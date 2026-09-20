@@ -5,7 +5,7 @@ import type { Bootstrap, FplFixture } from "../lib/fpl";
 import { price as fplPrice } from "../lib/fpl";
 import type { Scored } from "../lib/select";
 import { pickCaptaincy, pickXi, scorePlayer } from "../lib/select";
-import { buildSuggestions } from "../lib/suggest";
+import { buildSuggestions, crowdTop11 } from "../lib/suggest";
 
 const CHIPS = ["—", "WC", "FH", "BB", "TC"] as const;
 
@@ -144,6 +144,7 @@ export default function TransferPlanner({ boot, initialSquadIds, bank, transfers
     () => buildSuggestions(squadIds, boot, gwFixtures, gwIds, teamsById, codesById, sellById, bankM, activeGw),
     [squadIds, boot, gwFixtures, gwIds, teamsById, codesById, sellById, bankM, activeGw],
   );
+  const crowd = useMemo(() => crowdTop11(boot), [boot]);
 
   useEffect(() => {
     if (!entryId || squadIds.length === 0) return;
@@ -243,23 +244,34 @@ export default function TransferPlanner({ boot, initialSquadIds, bank, transfers
       </div>
       {suggestions.length > 0 && (
         <div className="suggestions" role="region" aria-label="Suggested transfers">
-          <h4 className="suggestions-title">Suggested moves · GW{gwIds[activeGw]} focus</h4>
+          <h4 className="suggestions-title">Suggested moves · 3GW horizon (GW{gwIds.join("/")})</h4>
           <ul className="suggestions-list">
             {suggestions.map((s) => (
               <li key={s.outId} className="suggestion">
                 <div className="suggestion-out">
                   <span className="suggestion-sell">
                     Sell <strong>{s.outName}</strong> · £{s.sellM.toFixed(1)}m → budget £{s.budgetM.toFixed(1)}m
+                    {s.outBlanks > 0 && <span className="flag-warn"> {s.outBlanks} blank</span>}
+                    {s.outAvgDiff !== null && <span className={`pill-fdr fdr-${Math.round(s.outAvgDiff)}`}> avg FDR {s.outAvgDiff.toFixed(1)}</span>}
                   </span>
-                  <span className="chip chip--muted">3GW {s.outTotal.toFixed(1)} pts</span>
+                  <span className="chip chip--muted">
+                    3GW {s.outTotal.toFixed(1)} ({s.outPerGw.map((v) => v.toFixed(1)).join("·")})
+                  </span>
                 </div>
                 <ul className="suggestion-candidates">
                   {s.candidates.map((c) => (
                     <li key={c.player.id} className="suggestion-cand">
                       <span>
-                        <strong>{c.player.name}</strong> · {c.player.teamName} · £{c.player.price.toFixed(1)}m · {c.player.score.toFixed(1)}
-                        <span className="delta"> +{c.delta.toFixed(1)}</span>
-                        {c.player.diff !== null && <span className={`pill-fdr fdr-${c.player.diff}`}> FDR {c.player.diff}</span>}
+                        <strong>{c.player.name}</strong> · {c.player.teamName} · £{c.player.price.toFixed(1)}m
+                        <span className="chip"> 3GW +{c.hDelta.toFixed(1)} ({c.perGw.map((v) => v.toFixed(1)).join("·")})</span>
+                        <span className="delta"> GW{activeGw !== undefined ? gwIds[activeGw] : ""} +{c.delta.toFixed(1)}</span>
+                        {c.avgDiff !== null && <span className={`pill-fdr fdr-${Math.round(c.avgDiff)}`}> avg FDR {c.avgDiff.toFixed(1)}</span>}
+                        {c.blanks > 0 && <span className="flag-warn"> blank</span>}
+                        {c.isConcentrated && <span className="chip chip--muted"> 1GW spike</span>}
+                        <span className={`chip ${c.momentum === "hot" ? "chip--hot" : c.momentum === "warm" ? "chip--warm" : ""}`}>
+                          {c.momentum === "hot" ? "▲ hot" : c.momentum === "warm" ? "▲ warm" : "momentum cold"} · {c.netTransfers > 0 ? `+${(c.netTransfers / 1000).toFixed(0)}k` : `${(c.netTransfers / 1000).toFixed(0)}k`} · {c.ownedPct.toFixed(1)}% owned
+                        </span>
+                        {c.momentum === "hot" && c.player.price <= 6 && <span className="badge badge-diff">VALUE</span>}
                       </span>
                       <button type="button" className="btn btn--small" onClick={() => applySuggestion(s.outId, c.player.id)}>
                         Apply
@@ -270,9 +282,21 @@ export default function TransferPlanner({ boot, initialSquadIds, bank, transfers
               </li>
             ))}
           </ul>
-          <p className="hint">Ranked by GW{activeGw !== undefined ? gwIds[activeGw] : ""} score delta; weakest 3GW totals surfaced first. True selling prices resolve on demand.</p>
+          <p className="hint">
+            Ranked by 3GW horizon gain (not single GW). Blank-heavy candidates filtered out; 1GW spikes flagged. Momentum (net transfers) is the strongest public price-rise signal — shown as hot/warm/cold, not a guarantee (official predictor updates every 15m, thresholds ~100% at midnight, max +0.1/day · +0.3/GW). Cheap hot risers with form keep delivering and let the bank compound.
+          </p>
         </div>
       )}
+      <details className="crowd" style={{ margin: "8px 0" }}>
+        <summary>Crowd top 11 by ownership — for comparison</summary>
+        <ul className="chips" style={{ flexWrap: "wrap" }}>
+          {crowd.map((c) => (
+            <li key={c.id} className="chip">
+              {c.name} · {c.ownedPct.toFixed(1)}% · net {(c.net / 1000).toFixed(0)}k
+            </li>
+          ))}
+        </ul>
+      </details>
       <div className="ticker-wrap">
         <table className="ticker">
           <thead>
