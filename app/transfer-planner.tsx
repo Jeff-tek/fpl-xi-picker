@@ -164,9 +164,10 @@ export default function TransferPlanner({ boot, initialSquadIds, bank, transfers
           if (!r.ok) continue;
           const j = (await r.json()) as { sell?: number };
           if (!live || typeof j.sell !== "number") continue;
+          const sellTenths: number = j.sell;
           setSellById((m) => {
             const next = new Map(m);
-            next.set(id, j.sell / 10);
+            next.set(id, sellTenths / 10);
             return next;
           });
         } catch {
