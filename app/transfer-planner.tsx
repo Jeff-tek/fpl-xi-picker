@@ -21,6 +21,7 @@ interface Props {
   transfers: EntryTransfer[] | null;
   gwIds: number[];
   gwFixtures: FplFixture[][];
+  entryId: string;
 }
 
 interface PlannedTransfer {
@@ -37,7 +38,7 @@ const priceM = (id: number, byId: Map<number, Bootstrap["elements"][number]>): n
 const webName = (id: number, byId: Map<number, Bootstrap["elements"][number]>): string =>
   byId.get(id)?.web_name ?? `#${id}`;
 
-export default function TransferPlanner({ boot, initialSquadIds, bank, transfers, gwIds, gwFixtures }: Props) {
+export default function TransferPlanner({ boot, initialSquadIds, bank, transfers, gwIds, gwFixtures, entryId }: Props) {
   const byId = useMemo(() => new Map(boot.elements.map((e) => [e.id, e])), [boot]);
   const teamsById = useMemo(() => new Map(boot.teams.map((t) => [t.id, t.short_name])), [boot]);
   const codesById = useMemo(() => new Map(boot.teams.map((t) => [t.id, t.code])), [boot]);
@@ -80,27 +81,51 @@ export default function TransferPlanner({ boot, initialSquadIds, bank, transfers
     setSellPrice(null);
     if (!outEl) return;
     let live = true;
-    const boughtEvent = (() => {
-      const buys = (transfers ?? []).filter((t) => t.element_in === outEl.id);
-      return buys.length > 0 ? Math.max(...buys.map((t) => t.event)) : 1;
-    })();
     const current = outEl.now_cost;
-    fetch(`/api/fpl/element-summary/${outEl.id}/`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => {
+    // Prefer on-demand true selling price via resilient endpoint (1 fetch,
+    // retries + mirror, Vercel 9s budget). Falls back to client-side
+    // element-summary walk, then to current price.
+    const run = async (): Promise<void> => {
+      if (entryId) {
+        try {
+          const r = await fetch(
+            `/api/fpl/selling-price?entryId=${encodeURIComponent(entryId)}&elementId=${outEl.id}&currentCost=${current}`,
+          );
+          if (r.ok) {
+            const j = (await r.json()) as { sell?: number };
+            if (live && typeof j.sell === "number") {
+              setSellPrice(j.sell / 10);
+              return;
+            }
+          }
+        } catch {
+          // fall through to local history walk
+        }
+      }
+      try {
+        const r = await fetch(`/api/fpl/element-summary/${outEl.id}/`);
+        const j = r.ok ? ((await r.json()) as { history?: Array<{ round?: number; event?: number; value: number }> }) : null;
         if (!live || !j) return;
-        const hist = (j.history ?? []) as Array<{ event: number; value: number }>;
-        const bought = hist.find((h) => h.event === boughtEvent)?.value ?? current;
+        const boughtEvent = (() => {
+          const buys = (transfers ?? []).filter((t) => t.element_in === outEl.id);
+          return buys.length > 0 ? Math.max(...buys.map((t) => t.event)) : 1;
+        })();
+        const hist = j.history ?? [];
+        const bought =
+          hist.find((h) => (h.round ?? h.event) === boughtEvent)?.value ??
+          hist.find((h) => (h.round ?? 999) <= boughtEvent)?.value ??
+          current;
         const sell = current <= bought ? current : bought + Math.floor((current - bought) / 2);
         setSellPrice(sell / 10);
-      })
-      .catch(() => {
+      } catch {
         if (live) setSellPrice(null);
-      });
+      }
+    };
+    void run();
     return () => {
       live = false;
     };
-  }, [outEl, transfers]);
+  }, [outEl, transfers, entryId]);
 
   const proceeds = sellPrice ?? (outEl ? fplPrice(outEl) : 0);
   const budget = outEl ? proceeds + funds : funds;

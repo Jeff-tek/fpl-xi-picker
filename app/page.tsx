@@ -849,6 +849,7 @@ export default function Home() {
             transfers={result.transfers}
             gwIds={result.gwIds.slice(0, 3)}
             gwFixtures={result.gwFixtures.slice(0, 3)}
+            entryId={result.entryId}
           />
           )}
           {tab === "live" && (
