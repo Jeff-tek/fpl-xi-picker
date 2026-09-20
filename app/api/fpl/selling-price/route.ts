@@ -148,8 +148,8 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
           : e.message
         : String(e);
     const status =
-      e instanceof Error && typeof (e as { status?: unknown }).status === "number"
-        ? (e as { status: number }).status
+      e instanceof Error && typeof (e as unknown as { status?: unknown }).status === "number"
+        ? (e as unknown as { status: number }).status
         : 502;
     return NextResponse.json(
       { error: `Selling-price fetch failed: ${reason}` },
