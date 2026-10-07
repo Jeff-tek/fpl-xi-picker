@@ -106,4 +106,4 @@ export const fetchUpstream = async (
 export const cacheControlFor = (path: string): string =>
   path.startsWith("bootstrap-static")
     ? "public, s-maxage=3600"
-    : "public, s-maxage=300";
+    : "public, s-maxage=0";
