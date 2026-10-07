@@ -6,10 +6,12 @@ import {
   fetchUpstream,
 } from "@/lib/fpl-client";
 
+export const revalidate = 0;
+
 // GET /api/fpl/<anything> -> proxy to FPL API (avoids browser CORS blocks).
 export async function GET(
   req: NextRequest,
-  { params }: { params: { path: string[] } },
+  { params }: { params: { path: string[] } }
 ) {
   const path = (params.path ?? []).join("/");
   const qs = req.nextUrl.search ?? "";
